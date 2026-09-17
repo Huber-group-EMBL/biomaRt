@@ -202,7 +202,7 @@
 }
 
 .createErrorMessage <- function(error_code, host = "") {
-  ## if we encounter internal server error, suggest using a mirror
+  ## if we encounter an internal server error, suggest the primary site
   if (error_code == 500) {
     err_msg <- "biomaRt has encountered an unexpected server error."
   } else if (error_code == 509) {
@@ -218,7 +218,7 @@
   if (grepl("ensembl", x = host, fixed = TRUE)) {
     err_msg <- c(
       err_msg,
-      "\nConsider trying one of the Ensembl mirrors (for more details look at ?useEnsembl)"
+      "\nPlease check the Ensembl service status and try again later."
     )
   }
 
