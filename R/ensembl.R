@@ -226,10 +226,8 @@ listEnsembl <- function(
 ) {
   if (!missing(mirror)) {
     warning(
-      "Ensembl mirrors are deprecated ",
-      "in favour of the main site at www.ensembl.org.\n",
-      "The `mirror` argument is deprecated ",
-      "and will be removed in the next biomaRt version.",
+      "The `mirror` argument is deprecated and ignored; ",
+      "it will be removed in the next biomaRt version.",
       call. = FALSE
     )
   }
