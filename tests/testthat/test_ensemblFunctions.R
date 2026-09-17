@@ -32,41 +32,11 @@ test_that("useEnsembl(host = ) is not necessary for ensembl.org", {
   expect_s4_class(ensembl_mart, "Mart")
 })
 
-with_mock_dir(
-  "all_500",
-  {
-    test_that("Ensembl mirror selection works", {
-      expect_error(
-        .chooseEnsemblMirror(mirror = NULL),
-        regexp = "Unable to query any Ensembl site"
-      )
-    })
-  },
-  simplify = FALSE
-)
-
-with_mock_dir(
-  "www_OK",
-  {
-    test_that("Ensembl mirror selection works", {
-      .chooseEnsemblMirror(mirror = "useast") |>
-        expect_equal("www") |>
-        expect_message(regexp = "unresponsive")
-    })
-  },
-  simplify = FALSE
-)
-
 test_that("Ensembl URLs are constructed correctly", {
   ## no arguments ##
   .constructEnsemblURL() |>
     expect_equal("https://jun2026.archive.ensembl.org") |>
     expect_silent()
-
-  expect_equal(
-    .constructEnsemblURL(mirror = "useast"),
-    "https://useast.ensembl.org"
-  )
 
   ## GRCh ##
   expect_equal(.constructEnsemblURL(GRCh = 37), "https://grch37.ensembl.org")
@@ -91,18 +61,6 @@ test_that("Ensembl URLs are constructed correctly", {
     .constructEnsemblURL(version = "100", GRCh = 37),
     regexp = "version or GRCh arguments cannot be used together"
   )
-
-  .constructEnsemblURL(mirror = "asia", version = 100) |>
-    expect_equal("https://apr2020.archive.ensembl.org") |>
-    expect_warning(
-      regexp = "version or GRCh arguments cannot be used together with the mirror argument"
-    )
-
-  .constructEnsemblURL(mirror = "useast", GRCh = 37) |>
-    expect_equal("https://grch37.ensembl.org") |>
-    expect_warning(
-      regexp = "version or GRCh arguments cannot be used together with the mirror argument"
-    )
 })
 
 test_that("sequence correct code is used to get sequence based on ID type", {

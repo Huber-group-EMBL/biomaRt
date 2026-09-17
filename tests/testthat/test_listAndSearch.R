@@ -2,7 +2,6 @@ library(biomaRt)
 cache <- file.path(tempdir(), "biomart_cache_test")
 Sys.setenv(BIOMART_CACHE = cache)
 
-# ensembl <- useEnsembl("ensembl", mirror = "www")
 ensembl <- Mart(biomart = "ensembl")
 
 example_datasets <- data.frame(

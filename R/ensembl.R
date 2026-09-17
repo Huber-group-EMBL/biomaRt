@@ -23,41 +23,35 @@
 
 #' @importFrom httr2 req_error req_options req_perform req_retry req_timeout request resp_body_string resp_status req_user_agent
 .getArchiveList <- function(http_config = list()) {
-  mirrors <- c("www", "asia", "useast")
+  url <- paste0(
+    "https://www.ensembl.org/info/website/archives/index.html?redirect=no"
+  )
 
-  while (length(mirrors) > 0) {
-    url <- paste0(
-      "https://",
-      mirrors[1],
-      ".ensembl.org/info/website/archives/index.html?redirect=no"
-    )
+  html_request <- request(url) |>
+    req_user_agent(
+      .biomaRt_user_agent()
+    ) |>
+    req_timeout(10) |>
+    req_options(!!!http_config) |>
+    req_retry(max_tries = 3) |>
+    req_error(is_error = \(resp) FALSE)
 
-    html_request <- request(url) |>
-      req_user_agent(
-        .biomaRt_user_agent()
-      ) |>
-      req_timeout(10) |>
-      req_options(!!!http_config) |>
-      req_retry(max_tries = 3) |>
-      req_error(is_error = \(resp) FALSE)
+  html <- req_perform(html_request)
 
-    html <- req_perform(html_request)
-
-    ## this is TRUE if there's an HTTP error or we get the Ensembl error page
-    if (
-      identical(resp_status(html), 200L) &&
-        !grepl(
-          "The Ensembl web service you requested is temporarily unavailable",
-          resp_body_string(html),
-          fixed = TRUE
-        )
-    ) {
-      return(resp_body_string(html))
-    }
-    mirrors <- mirrors[-1]
+  ## this is TRUE if there's an HTTP error or we get the Ensembl error page
+  if (
+    identical(resp_status(html), 200L) &&
+      !grepl(
+        "The Ensembl web service you requested is temporarily unavailable",
+        resp_body_string(html),
+        fixed = TRUE
+      )
+  ) {
+    return(resp_body_string(html))
   }
-  stop("Unable to contact any Ensembl mirror")
+  stop("The Ensembl web service you requested is temporarily unavailable")
 }
+
 
 ## scrapes the ensembl website for the list of current archives and returns
 ## a data frame containing the versions and their URL
@@ -151,7 +145,6 @@ listEnsemblArchives <- function(fetch = TRUE) {
   mart = NULL,
   version = NULL,
   GRCh = NULL,
-  mirror = NULL,
   verbose = FALSE
 ) {
   if (is.null(version)) {
@@ -173,7 +166,6 @@ listEnsemblArchives <- function(fetch = TRUE) {
     marts <- .readFromCache(bfc, paste0("ensembl-marts-", version_num))
   } else {
     host <- .constructEnsemblURL(
-      mirror = mirror,
       version = version,
       GRCh = GRCh
     )
@@ -183,7 +175,7 @@ listEnsemblArchives <- function(fetch = TRUE) {
       verbose = verbose,
       http_config = .getEnsemblSSL(),
       port = .guess_port(host),
-      ensemblRedirect = is.null(mirror)
+      ensemblRedirect = TRUE
     )
 
     .addToCache(bfc, marts, hash = paste0("ensembl-marts-", version_num))
@@ -205,9 +197,7 @@ listEnsemblArchives <- function(fetch = TRUE) {
 #' archived Ensembl version
 #' @param GRCh GRCh version to connect to if not the current GRCh38, currently
 #' this can only be 37
-#' @param mirror Specify an Ensembl mirror to connect to.  The valid options
-#' here are 'www', 'useast', 'asia'.  If no mirror is specified the primary
-#' site at www.ensembl.org will be used.
+#' @param mirror Deprecated. A warning will be emitted if used.
 #' @param verbose Give detailed output of what the method is doing, for
 #' debugging purposes
 #' @param includeHosts If this option is set to `TRUE` a more detailed
@@ -234,11 +224,20 @@ listEnsembl <- function(
   mirror = NULL,
   verbose = FALSE
 ) {
+  if (!missing(mirror)) {
+    warning(
+      "Ensembl mirrors are deprecated ",
+      "in favour of the main site at www.ensembl.org.\n",
+      "The `mirror` argument is deprecated ",
+      "and will be removed in the next biomaRt version.",
+      call. = FALSE
+    )
+  }
+
   marts <- .listEnsembl(
     mart = mart,
     version = version,
     GRCh = GRCh,
-    mirror = mirror,
     verbose = verbose
   )
 
@@ -257,19 +256,10 @@ listEnsembl <- function(
 
 ## creates an Ensembl URL based on the arguments provided to useEnsembl.
 ## If there are conflicting options, order of precedence is:
-## GRCh, version, mirror
+## GRCh, version
 ## Default return value is https://jun2026.archive.ensembl.org
-.constructEnsemblURL <- function(mirror = NULL, version = NULL, GRCh = NULL) {
+.constructEnsemblURL <- function(version = NULL, GRCh = NULL) {
   host <- NULL
-
-  if (!is.null(mirror) && (!is.null(version) || !is.null(GRCh))) {
-    warning(
-      "version or GRCh arguments cannot be used together with the mirror argument.\n",
-      "We will ignore the mirror argument and connect to the main Ensembl site.",
-      call. = FALSE
-    )
-    mirror <- NULL
-  }
 
   if (!is.null(version) && !is.null(GRCh)) {
     stop(
@@ -303,10 +293,6 @@ listEnsembl <- function(
     }
   }
 
-  if (!is.null(mirror) && mirror %in% c("www", "useast", "asia")) {
-    host <- paste0("https://", mirror, ".ensembl.org")
-  }
-
   if (is.null(host)) {
     host <- "https://jun2026.archive.ensembl.org"
   }
@@ -326,13 +312,6 @@ listEnsembl <- function(
 #' first select the BioMart database using [useEnsembl()] and then use the
 #' [listDatasets()] function on the selected Mart object.
 #'
-#' The `mirror` argument can be considered as a "preferred choice" when
-#' connecting to Ensembl.  If the argument is provided then connectivity to
-#' that mirror will be tested.  If it responds positively then the requested
-#' mirror will be used.  If the response is a failure each of the remaining
-#' mirrors will be selected at random and tested until a working server is
-#' found.  Once identified that Ensembl server will be associated with the
-#' returned `Mart` object and will be used for all queries.
 #'
 #' @param biomart BioMart database name you want to connect to. Possible
 #' database names can be retrieved with the function [listEnsembl()]
@@ -346,10 +325,7 @@ listEnsembl <- function(
 #' archived Ensembl version
 #' @param GRCh GRCh version to connect to if not the current GRCh38, currently
 #' this can only be 37
-#' @param mirror Specify an Ensembl mirror to connect to.  The valid options
-#' here are 'www', 'useast', 'asia'.  If no mirror is specified the primary
-#' site at www.ensembl.org will be used.  Mirrors are not available for the
-#' Ensembl Genomes databases.
+#' @param mirror Deprecated. A warning will be emitted if used.
 #' @param verbose Give detailed output of what the method is doing while in
 #' use, for debugging
 #'
@@ -360,9 +336,6 @@ listEnsembl <- function(
 #'
 #' @examplesIf interactive()
 #' mart <- useEnsembl("ENSEMBL_MART_ENSEMBL")
-#'
-#' ## using the US East mirror
-#' us_mart <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL", mirror = "useast")
 #'
 #' ## using the Arabidopsis thaliana genes dataset in Ensembl Plants
 #' plants_mart <- useEnsemblGenomes(
@@ -392,6 +365,15 @@ useEnsembl <- function(
       "You must provide the argument 'biomart'\n",
       "Available Ensembl Marts can be viewed with ",
       "the function listEnsembl()"
+    )
+  }
+  if (!missing(mirror)) {
+    warning(
+      "Ensembl mirrors are deprecated ",
+      "in favour of the main site at www.ensembl.org.\n",
+      "The `mirror` argument is deprecated ",
+      "and will be removed in the next biomaRt version.",
+      call. = FALSE
     )
   }
 
@@ -436,8 +418,7 @@ useEnsembl <- function(
     } else {
       host <- .constructEnsemblURL(
         version = version,
-        GRCh = GRCh,
-        mirror = mirror
+        GRCh = GRCh
       )
       ensemblRedirect <- TRUE
     }
@@ -448,7 +429,7 @@ useEnsembl <- function(
   port <- .guess_port(host)
 
   if (grepl(x = host, pattern = "www|useast|asia")) {
-    marts <- .listEnsembl(version = version, GRCh = GRCh, mirror = mirror)
+    marts <- .listEnsembl(version = version, GRCh = GRCh)
   } else {
     marts <- .listMarts(
       host = host,
@@ -561,83 +542,4 @@ useEnsemblGenomes <- function(biomart, dataset, host = NULL) {
   )
 
   return(ens)
-}
-
-
-## This function submits a small test query to identify a working Ensembl mirror.
-## If no mirror argument is provided it will use "www" as its first choice.
-## If the selected mirror returns a success (http 200) response it will be used
-## Otherwise another mirror is selected at random and used instead.
-## If all mirrors fail it will return an error
-#' @importFrom httr2 req_body_form req_options req_timeout req_user_agent
-#' @importFrom stringr str_match str_replace
-.chooseEnsemblMirror <- function(mirror, http_config) {
-  mirrors <- c("www", "asia", "useast")
-
-  if (missing(http_config)) {
-    http_config <- do.call(c, .getEnsemblSSL())
-  }
-
-  example_query <- '<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Query>
-<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "0" count = "" datasetConfigVersion = "0.6" >
-	<Dataset name = "hsapiens_gene_ensembl" interface = "default" >
-		<Filter name = "ensembl_gene_id" value = "ENSG00000000003"/>
-		<Attribute name = "ensembl_gene_id" />
-	</Dataset>
-</Query>'
-
-  ## create Ensembl URL and stop any redirection to a mirror
-  host <- .constructEnsemblURL(mirror = mirror)
-  host <- paste0(host, "/biomart/martservice?redirect=no")
-  mirror <- str_match(host, pattern = "://([a-z]{3,6})\\.")[1, 2]
-
-  req <- httr2::request(host) |>
-    req_user_agent(
-      .biomaRt_user_agent()
-    ) |>
-    req_body_form(query = example_query) |>
-    req_timeout(10) |>
-    req_options(!!!http_config)
-
-  result <- tryCatch(httr2::req_perform(req), error = function(c) {
-    "timeout"
-  })
-
-  tryAgain <- any(result == "timeout") || httr2::resp_status(result) == 500
-
-  if (tryAgain) {
-    ## try an alternative mirror if ensembl returns 500
-    remaining_mirrors <- setdiff(mirrors, mirror)
-    while ((length(remaining_mirrors) > 0) && (tryAgain)) {
-      mirror <- sample(remaining_mirrors, size = 1)
-      message("Ensembl site unresponsive, trying ", mirror, " mirror")
-      host <- str_replace(
-        host,
-        pattern = "://([a-z]{3,6})\\.",
-        replacement = paste0("://", mirror, ".")
-      )
-
-      req <- httr2::request(host) |>
-        req_user_agent(
-          .biomaRt_user_agent()
-        ) |>
-        req_body_form(query = example_query) |>
-        req_timeout(10) |>
-        req_options(!!!http_config)
-
-      result <- tryCatch(httr2::req_perform(req), error = function(c) {
-        "timeout"
-      })
-      tryAgain <- any(result == "timeout") || httr2::resp_status(result) == 500
-      if (tryAgain) {
-        remaining_mirrors <- setdiff(remaining_mirrors, mirror)
-      }
-    }
-  }
-  if (tryAgain) {
-    stop("Unable to query any Ensembl site")
-  }
-
-  return(mirror)
 }

@@ -100,20 +100,6 @@ As mentioned previously, if the dataset one wants to use is known in advance i.e
 ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 ```
 
-## Ensembl site
-
-The Ensembl mirror sites are deprecated. `biomaRt` now uses the primary
-`www.ensembl.org` site. The `mirror` argument is retained for compatibility
-and accepts only `www`.
-
-```{r, mirrors, eval = TRUE}
-ensembl <- useEnsembl(
-  biomart = "ensembl",
-  dataset = "hsapiens_gene_ensembl",
-  mirror = "www"
-)
-```
-
 ## Using archived versions of Ensembl
 
 It is possible to query archived versions of Ensembl through `r BiocStyle::Biocpkg("biomaRt")`, so you can maintain consistent annotation throughout the duration of a project.
