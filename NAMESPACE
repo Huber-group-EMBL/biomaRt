@@ -73,8 +73,7 @@ importFrom(methods,
 importFrom(progress,progress_bar)
 importFrom(stringr,
   str_extract_all,
-  str_match,
-  str_replace
+  str_match
 )
 importFrom(utils,
   edit,

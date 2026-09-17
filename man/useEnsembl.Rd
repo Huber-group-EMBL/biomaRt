@@ -35,10 +35,7 @@ archived Ensembl version}
 \item{GRCh}{GRCh version to connect to if not the current GRCh38, currently
 this can only be 37}
 
-\item{mirror}{Specify an Ensembl mirror to connect to.  The valid options
-here are 'www', 'useast', 'asia'.  If no mirror is specified the primary
-site at www.ensembl.org will be used.  Mirrors are not available for the
-Ensembl Genomes databases.}
+\item{mirror}{Deprecated. A warning will be emitted if used.}
 
 \item{verbose}{Give detailed output of what the method is doing while in
 use, for debugging}
@@ -58,21 +55,9 @@ functions.  To know which datasets are available within a BioMart database,
 first select the BioMart database using \code{\link[=useEnsembl]{useEnsembl()}} and then use the
 \code{\link[=listDatasets]{listDatasets()}} function on the selected Mart object.
 }
-\details{
-The \code{mirror} argument can be considered as a "preferred choice" when
-connecting to Ensembl.  If the argument is provided then connectivity to
-that mirror will be tested.  If it responds positively then the requested
-mirror will be used.  If the response is a failure each of the remaining
-mirrors will be selected at random and tested until a working server is
-found.  Once identified that Ensembl server will be associated with the
-returned \code{Mart} object and will be used for all queries.
-}
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 mart <- useEnsembl("ENSEMBL_MART_ENSEMBL")
-
-## using the US East mirror
-us_mart <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL", mirror = "useast")
 
 ## using the Arabidopsis thaliana genes dataset in Ensembl Plants
 plants_mart <- useEnsemblGenomes(

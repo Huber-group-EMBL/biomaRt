@@ -26,9 +26,7 @@ archived Ensembl version}
 \item{GRCh}{GRCh version to connect to if not the current GRCh38, currently
 this can only be 37}
 
-\item{mirror}{Specify an Ensembl mirror to connect to.  The valid options
-here are 'www', 'useast', 'asia'.  If no mirror is specified the primary
-site at www.ensembl.org will be used.}
+\item{mirror}{Deprecated. A warning will be emitted if used.}
 
 \item{verbose}{Give detailed output of what the method is doing, for
 debugging purposes}
