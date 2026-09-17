@@ -100,19 +100,19 @@ As mentioned previously, if the dataset one wants to use is known in advance i.e
 ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 ```
 
-## Ensembl mirror sites
+## Ensembl site
 
-To improve performance Ensembl provides several mirrors of their site distributed around the globe.  When you use the default settings for `useEnsembl()` your queries will be directed to your closest mirror geographically.  In theory this should give you the best performance, however this is not always the case in practice.  For example, if the nearest mirror is experiencing many queries from other users it may perform poorly for you.  You can use the `mirror` argument to `useEnsembl()` to explicitly request a specific mirror.
+The Ensembl mirror sites are deprecated. `biomaRt` now uses the primary
+`www.ensembl.org` site. The `mirror` argument is retained for compatibility
+and accepts only `www`.
 
 ```{r, mirrors, eval = TRUE}
 ensembl <- useEnsembl(
   biomart = "ensembl",
   dataset = "hsapiens_gene_ensembl",
-  mirror = "useast"
+  mirror = "www"
 )
 ```
-
-Values for the mirror argument are: `useast`, `asia`, and `www`.
 
 ## Using archived versions of Ensembl
 
