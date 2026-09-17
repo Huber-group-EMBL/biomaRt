@@ -3,6 +3,7 @@ CHANGES IN VERSION 2.70.0
 
 BREAKING CHANGES
 
+ o The deprecated Ensembl mirrors ("asia" and "useast") have been removed.
  o This package now defaults to https://jun2026.archive.ensembl.org where it
  was previously defaulting to https://www.ensembl.org/. The June 2026 (Ensembl
  116) release is the last release to include the Biomart utility.
