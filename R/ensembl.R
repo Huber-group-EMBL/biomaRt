@@ -23,7 +23,7 @@
 
 #' @importFrom httr2 req_error req_options req_perform req_retry req_timeout request resp_body_string resp_status req_user_agent
 .getArchiveList <- function(http_config = list()) {
-  mirrors <- c("www", "asia", "useast")
+  mirrors <- "www"
 
   while (length(mirrors) > 0) {
     url <- paste0(
