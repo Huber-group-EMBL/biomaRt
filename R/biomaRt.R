@@ -91,7 +91,7 @@ bmRequest <- function(request, http_config, verbose = FALSE) {
 #' @param mart mart object created with the [useMart()] function.
 #' This is optional, as you usually use [listMarts()] to see which
 #' marts there are to connect to.
-#' @param host Host to connect to. Defaults to `www.ensembl.org`
+#' @param host Host to connect to. Defaults to `jun2026.archive.ensembl.org`
 #' @param path path to martservice that should be pasted behind the host to get
 #' to web service URL
 #' @param port port to use in HTTP communication
@@ -118,7 +118,7 @@ bmRequest <- function(request, http_config, verbose = FALSE) {
 #' @export
 listMarts <- function(
   mart = NULL,
-  host = "https://www.ensembl.org",
+  host = "https://jun2026.archive.ensembl.org",
   path = "/biomart/martservice",
   port,
   includeHosts = FALSE,
@@ -148,7 +148,7 @@ listMarts <- function(
 #' @importFrom methods is
 .listMarts <- function(
   mart = NULL,
-  host = "www.ensembl.org",
+  host = "jun2026.archive.ensembl.org",
   path = "/biomart/martservice",
   port = 443,
   includeHosts = FALSE,
@@ -196,8 +196,8 @@ listMarts <- function(
     if (grepl(x = registry, pattern = "status.ensembl.org", fixed = TRUE)) {
       stop(
         "Your query has been redirected to https://status.ensembl.org ",
-        "indicating this Ensembl service is currently unavailable.",
-        "\nLook at ?useEnsembl for details on how to try a mirror site.",
+        "indicating the Ensembl service is currently unavailable.\n",
+        "Please try again later.",
         call. = FALSE
       )
     } else {
@@ -279,7 +279,7 @@ listMarts <- function(
 useMart <- function(
   biomart,
   dataset,
-  host = "https://www.ensembl.org",
+  host = "https://jun2026.archive.ensembl.org",
   path = "/biomart/martservice",
   port,
   version,
@@ -305,7 +305,7 @@ useMart <- function(
 .useMart <- function(
   biomart,
   dataset,
-  host = "https://www.ensembl.org",
+  host = "https://jun2026.archive.ensembl.org",
   path = "/biomart/martservice",
   port = 443,
   ensemblRedirect = NULL,
@@ -393,26 +393,6 @@ useMart <- function(
     host = paste0(host, ":", port, marts$path[mindex], redirect),
     http_config = http_config
   )
-
-  if (any(grepl("archive", martHost(mart), fixed = TRUE))) {
-    ## hack to work around redirection of most recent mirror URL
-    archives <- .listEnsemblArchives(
-      http_config = http_config
-    )
-    current_release <- archives[archives$current_release == "*", "url"]
-    if (grepl(martHost(mart), pattern = current_release)) {
-      martHost(mart) <- stringr::str_replace(
-        martHost(mart),
-        pattern = current_release,
-        "https://www.ensembl.org"
-      )
-      martHost(mart) <- stringr::str_replace(
-        martHost(mart),
-        pattern = stringr::fixed(":80/"),
-        ":443/"
-      )
-    }
-  }
 
   BioMartVersion <- bmVersion(mart, verbose = verbose)
 
@@ -1033,14 +1013,14 @@ getBM <- function(
   if (useCache) {
     cache <- .biomartCacheLocation()
     bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
-  }
-  hash <- .createHash(mart, attributes, filters, values, uniqueRows, bmHeader)
-  if (useCache && .checkValidCache(bfc, hash)) {
-    if (verbose) {
-      message("Cache found")
+    hash <- .createHash(mart, attributes, filters, values, uniqueRows, bmHeader)
+    if (.checkValidCache(bfc, hash)) {
+      if (verbose) {
+        message("Cache found")
+      }
+      result <- .readFromCache(bfc, hash)
+      return(result)
     }
-    result <- .readFromCache(bfc, hash)
-    return(result)
   }
   ## force the query to return the 'descriptive text' header names with the result
   ## we use these later to match and order attribute/column names

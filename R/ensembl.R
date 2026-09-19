@@ -23,7 +23,7 @@
 
 #' @importFrom httr2 req_error req_options req_perform req_retry req_timeout request resp_body_string resp_status req_user_agent
 .getArchiveList <- function(http_config = list()) {
-  mirrors <- c("www", "asia", "useast")
+  mirrors <- "www"
 
   while (length(mirrors) > 0) {
     url <- paste0(
@@ -259,7 +259,7 @@ listEnsembl <- function(
 ## creates an Ensembl URL based on the arguments provided to useEnsembl.
 ## If there are conflicting options, order of precedence is:
 ## GRCh, version, mirror
-## Default return value is https://www.ensembl.org
+## Default return value is https://jun2026.archive.ensembl.org
 .constructEnsemblURL <- function(mirror = NULL, version = NULL, GRCh = NULL) {
   host <- NULL
 
@@ -304,21 +304,8 @@ listEnsembl <- function(
     }
   }
 
-  if (!is.null(mirror)) {
-    if (mirror %in% c("www", "useast", "asia")) {
-      host <- paste0("https://", mirror, ".ensembl.org")
-    } else {
-      warning(
-        "Invalid mirror. Select a mirror from [www, useast, asia].\n",
-        "Default when no mirror is specified is to use ",
-        "www.ensembl.org which may be automatically redirected."
-      )
-      host <- "https://www.ensembl.org"
-    }
-  }
-
   if (is.null(host)) {
-    host <- "https://www.ensembl.org"
+    host <- "https://jun2026.archive.ensembl.org"
   }
 
   return(host)
@@ -433,19 +420,21 @@ useEnsembl <- function(
     if (no_subdomain) {
       warning(
         "You cannot use the host 'ensembl.org'.\n",
-        "Please provide a subdomain e.g. www.ensembl.org or use one of the 'mirror', 'version', 'GRCh' arguments"
+        "Please provide a subdomain e.g. www.ensembl.org or use one of the 'version' or 'GRCh' arguments"
       )
     }
 
     if (is.null(version) && is.null(GRCh)) {
-      mirror <- .chooseEnsemblMirror(mirror = mirror, http_config = http_config)
+      host <- "https://jun2026.archive.ensembl.org"
+      ensemblRedirect <- FALSE
+    } else {
+      host <- .constructEnsemblURL(
+        version = version,
+        GRCh = GRCh,
+        mirror = mirror
+      )
+      ensemblRedirect <- TRUE
     }
-    host <- .constructEnsemblURL(
-      version = version,
-      GRCh = GRCh,
-      mirror = mirror
-    )
-    ensemblRedirect <- is.null(mirror)
   } else {
     ensemblRedirect <- FALSE
   }
@@ -487,24 +476,6 @@ useEnsembl <- function(
     host = paste0(host, ":", port, "/biomart/martservice", redirect),
     http_config = http_config
   )
-
-  if (grepl("archive", martHost(mart), fixed = TRUE)) {
-    ## hack to work around redirection of most recent mirror URL
-    archives <- .listEnsemblArchives(http_config = http_config)
-    current_release <- archives[archives$current_release == "*", "url"]
-    if (grepl(martHost(mart), pattern = current_release)) {
-      martHost(mart) <- stringr::str_replace(
-        martHost(mart),
-        pattern = current_release,
-        "https://www.ensembl.org"
-      )
-      martHost(mart) <- stringr::str_replace(
-        martHost(mart),
-        pattern = stringr::fixed(":80/"),
-        ":443/"
-      )
-    }
-  }
 
   if (!missing(dataset)) {
     mart <- useDataset(mart = mart, dataset = dataset, verbose = verbose)
