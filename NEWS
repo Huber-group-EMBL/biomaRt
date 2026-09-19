@@ -1,3 +1,17 @@
+CHANGES IN VERSION 2.68.1
+-------------------------
+
+BACKPORTS FROM DEVELOPMENT VERSION
+
+ o Error message no longer recommend using the deprecated mirrors.
+ o This package now defaults to https://jun2026.archive.ensembl.org where it
+ was previously defaulting to https://www.ensembl.org/. The June 2026 (Ensembl
+ 116) release is the last release to include the Biomart utility.
+ o Unnecessary call to `listEnsemblArchives()` in `getBM(useCache = FALSE)`
+ has been removed.
+ o The 'mirror' argument in `listEnsembl()` no longer has any effect.
+
+
 CHANGES IN VERSION 2.68.0
 -------------------------
 
