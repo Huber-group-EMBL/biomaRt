@@ -196,7 +196,8 @@ listMarts <- function(
     if (grepl(x = registry, pattern = "status.ensembl.org", fixed = TRUE)) {
       stop(
         "Your query has been redirected to https://status.ensembl.org ",
-        "indicating the Ensembl service is currently unavailable.",
+        "indicating the Ensembl service is currently unavailable.\n",
+        "Please try again later.",
         call. = FALSE
       )
     } else {
