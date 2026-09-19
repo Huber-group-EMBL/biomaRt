@@ -304,10 +304,6 @@ listEnsembl <- function(
     }
   }
 
-  if (!is.null(mirror) && mirror %in% c("www", "useast", "asia")) {
-    host <- paste0("https://", mirror, ".ensembl.org")
-  }
-
   if (is.null(host)) {
     host <- "https://jun2026.archive.ensembl.org"
   }
