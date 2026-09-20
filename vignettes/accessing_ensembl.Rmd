@@ -105,15 +105,7 @@ ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
 The Ensembl mirror sites are deprecated. `biomaRt` now uses the primary
 `www.ensembl.org` site. The `mirror` argument is retained for compatibility
-and accepts only `www`.
-
-```{r, mirrors, eval = FALSE}
-ensembl <- useEnsembl(
-  biomart = "ensembl",
-  dataset = "hsapiens_gene_ensembl",
-  mirror = "www"
-)
-```
+but is ignored.
 
 ## Using archived versions of Ensembl
 
