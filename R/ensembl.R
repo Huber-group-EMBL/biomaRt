@@ -420,7 +420,7 @@ useEnsembl <- function(
     if (no_subdomain) {
       warning(
         "You cannot use the host 'ensembl.org'.\n",
-        "Please provide a subdomain e.g. www.ensembl.org or use one of the 'version' or 'GRCh' arguments"
+        "Please provide a subdomain e.g. jun2026.archive.ensembl.org or use one of the 'version' or 'GRCh' arguments"
       )
     }
 
