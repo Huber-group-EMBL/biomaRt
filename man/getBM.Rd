@@ -53,10 +53,9 @@ setting to on might still be able to retrieve your data in that case}
 Ensembl data fields such as containing a quote, in such cases you can try to
 change the value of quote to try to still parse the results.}
 
-\item{useCache}{Boolean indicating whether the results cache should be used.
-Setting to \code{FALSE} will disable reading and writing of the cache.  This
-argument is likely to disappear after the cache functionality has been
-tested more thoroughly.}
+\item{useCache}{If \code{useCache = TRUE} (the default) biomaRt will try to store
+successful query results on disk, and will load these if a query is run
+again, rather than contacting the upstream server.}
 }
 \value{
 A \code{data.frame}. There is no implicit mapping between its rows

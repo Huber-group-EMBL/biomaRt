@@ -11,7 +11,8 @@ listMarts(
   port,
   includeHosts = FALSE,
   http_config = list(),
-  verbose = FALSE
+  verbose = FALSE,
+  useCache = TRUE
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ experience no problems accessing \code{host}.}
 
 \item{verbose}{Give detailed output of what the method is doing, for
 debugging purposes.}
+
+\item{useCache}{If \code{useCache = TRUE} (the default) biomaRt will try to store
+successful query results on disk, and will load these if a query is run
+again, rather than contacting the upstream server.}
 }
 \description{
 This function returns a list of BioMart databases to which biomaRt can

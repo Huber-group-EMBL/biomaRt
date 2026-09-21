@@ -109,6 +109,8 @@ bmRequest <- function(
 #' experience no problems accessing `host`.
 #' @param verbose Give detailed output of what the method is doing, for
 #' debugging purposes.
+#' @inheritParams shared_arguments
+#'
 #' @author Steffen Durinck, Mike Smith
 #' @keywords methods
 #'
@@ -459,6 +461,8 @@ useMart <- function(
 #' ([regex][base::regex]) to be used for the search.  If left blank the
 #' default is to use ".*" which will match everything and return the same as
 #' [listDatasets()].
+#' @inheritParams shared_arguments
+#'
 #' @author Steffen Durinck, Mike Smith
 #' @keywords methods
 #'
@@ -719,6 +723,8 @@ checkDataset <- function(dataset, mart, useCache = TRUE) {
 #' @param mart Mart object created with the [useMart()] function
 #' @param verbose Give detailed output of what the method is doing, for
 #' debugging
+#' @inheritParams shared_arguments
+#'
 #' @author Steffen Durinck
 #' @keywords methods
 #'
@@ -1002,10 +1008,8 @@ filterType <- function(filter, mart) {
 #' @param quote Sometimes parsing of the results fails due to errors in the
 #' Ensembl data fields such as containing a quote, in such cases you can try to
 #' change the value of quote to try to still parse the results.
-#' @param useCache Boolean indicating whether the results cache should be used.
-#' Setting to `FALSE` will disable reading and writing of the cache.  This
-#' argument is likely to disappear after the cache functionality has been
-#' tested more thoroughly.
+#' @inheritParams shared_arguments
+#'
 #' @return A `data.frame`. There is no implicit mapping between its rows
 #' and the function arguments (e.g. `filters`, `values`), therefore
 #' make sure to have the relevant identifier(s) returned by specifying them in

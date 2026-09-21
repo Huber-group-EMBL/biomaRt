@@ -5,7 +5,7 @@
 \alias{searchDatasets}
 \title{List or search the datasets available in the selected BioMart database}
 \usage{
-listDatasets(mart, verbose = FALSE)
+listDatasets(mart, verbose = FALSE, useCache = TRUE)
 
 searchDatasets(mart, pattern = ".*")
 }
@@ -14,6 +14,10 @@ searchDatasets(mart, pattern = ".*")
 
 \item{verbose}{Give detailed output of what the method is doing, for
 debugging purposes}
+
+\item{useCache}{If \code{useCache = TRUE} (the default) biomaRt will try to store
+successful query results on disk, and will load these if a query is run
+again, rather than contacting the upstream server.}
 
 \item{pattern}{Character vector defining the regular expression
 (\link[base:regex]{regex}) to be used for the search.  If left blank the

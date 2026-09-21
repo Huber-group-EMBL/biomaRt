@@ -22,3 +22,13 @@ NULL
 #' @import methods
 ## usethis namespace: end
 NULL
+
+#' Shared arguments for biomaRt functions
+#'
+#' @name shared_arguments
+#' @keywords internal
+#'
+#' @param useCache If `useCache = TRUE` (the default) biomaRt will try to store
+#' successful query results on disk, and will load these if a query is run
+#' again, rather than contacting the upstream server.
+NULL

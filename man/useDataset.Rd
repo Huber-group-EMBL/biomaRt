@@ -4,7 +4,7 @@
 \alias{useDataset}
 \title{Select a dataset to use and updates Mart object}
 \usage{
-useDataset(dataset, mart, verbose = FALSE)
+useDataset(dataset, mart, verbose = FALSE, useCache = TRUE)
 }
 \arguments{
 \item{dataset}{Dataset you want to use.  List of possible datasets can be
@@ -14,6 +14,10 @@ retrieved using the function \code{\link[=listDatasets]{listDatasets()}}}
 
 \item{verbose}{Give detailed output of what the method is doing, for
 debugging}
+
+\item{useCache}{If \code{useCache = TRUE} (the default) biomaRt will try to store
+successful query results on disk, and will load these if a query is run
+again, rather than contacting the upstream server.}
 }
 \description{
 This function selects a dataset and updates the Mart object
