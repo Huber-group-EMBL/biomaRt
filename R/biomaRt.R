@@ -129,7 +129,8 @@ listMarts <- function(
   port,
   includeHosts = FALSE,
   http_config = list(),
-  verbose = FALSE
+  verbose = FALSE,
+  useCache = TRUE
 ) {
   if (missing(port)) {
     port <- .guess_port(host)
@@ -147,7 +148,8 @@ listMarts <- function(
     includeHosts = includeHosts,
     verbose = verbose,
     http_config = http_config,
-    ensemblRedirect = TRUE
+    ensemblRedirect = TRUE,
+    useCache = useCache
   )
 }
 
@@ -160,7 +162,8 @@ listMarts <- function(
   includeHosts = FALSE,
   verbose = FALSE,
   http_config,
-  ensemblRedirect = NULL
+  ensemblRedirect = NULL,
+  useCache = TRUE
 ) {
   request <- NULL
   if (is.null(mart)) {
@@ -188,44 +191,61 @@ listMarts <- function(
 
   is_ensembl <- grepl(x = request, pattern = "ensembl.org", fixed = TRUE)
 
-  registry <- bmRequest(
-    request = request,
-    http_config = http_config,
-    verbose = verbose,
-    type = "registry",
-    redirect = if (!ensemblRedirect && is_ensembl) "no" else "yes"
+  cache_entry <- paste0(
+    "registry-",
+    request,
+    "-",
+    if (!isFALSE(ensemblRedirect) && is_ensembl) "yes" else "no"
   )
+  cache <- .biomartCacheLocation()
+  bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
 
-  ## check this looks like the MartRegistry XML, otherwise throw an error
-  if (!grepl(x = registry, pattern = "^\n*<MartRegistry>")) {
-    if (grepl(x = registry, pattern = "status.ensembl.org", fixed = TRUE)) {
-      stop(
-        "Your query has been redirected to https://status.ensembl.org ",
-        "indicating the Ensembl service is currently unavailable.\n",
-        "Please try again later.",
-        call. = FALSE
-      )
-    } else {
-      stop(
-        "Unexpected format to the list of available marts.\n",
-        "Please check the following URL manually, ",
-        "and try ?listMarts for advice.\n",
-        request,
-        call. = FALSE
-      )
+  if (useCache && .useCache(bfc, cacheEntry = cache_entry, numDays = 7L)) {
+    marts <- .readFromCache(bfc, cache_entry)
+  } else {
+    registry <- bmRequest(
+      request = request,
+      http_config = http_config,
+      verbose = verbose,
+      type = "registry",
+      redirect = if (!ensemblRedirect && is_ensembl) "no" else "yes"
+    )
+
+    ## check this looks like the MartRegistry XML, otherwise throw an error
+    if (!grepl(x = registry, pattern = "^\n*<MartRegistry>")) {
+      if (grepl(x = registry, pattern = "status.ensembl.org", fixed = TRUE)) {
+        stop(
+          "Your query has been redirected to https://status.ensembl.org ",
+          "indicating the Ensembl service is currently unavailable.\n",
+          "Please try again later.",
+          call. = FALSE
+        )
+      } else {
+        stop(
+          "Unexpected format to the list of available marts.\n",
+          "Please check the following URL manually, ",
+          "and try ?listMarts for advice.\n",
+          request,
+          call. = FALSE
+        )
+      }
+    }
+
+    registry_xml2 <- xml2::read_xml(registry)
+    registry_xml2 <- xml2::xml_children(registry_xml2)
+
+    ## create a table with the registry information
+    marts <- do.call("rbind", xml2::xml_attrs(registry_xml2))
+    marts <- as.data.frame(marts[marts[, "visible"] == "1", , drop = FALSE])
+    ## rename some columns
+    names(marts)[names(marts) == "name"] <- "biomart"
+    names(marts)[names(marts) == "displayName"] <- "version"
+    names(marts)[names(marts) == "serverVirtualSchema"] <- "vschema"
+
+    if (useCache) {
+      .addToCache(bfc, marts, hash = cache_entry, update = TRUE)
     }
   }
-
-  registry_xml2 <- xml2::read_xml(registry)
-  registry_xml2 <- xml2::xml_children(registry_xml2)
-
-  ## create a table with the registry information
-  marts <- do.call("rbind", xml2::xml_attrs(registry_xml2))
-  marts <- as.data.frame(marts[marts[, "visible"] == "1", , drop = FALSE])
-  ## rename some columns
-  names(marts)[names(marts) == "name"] <- "biomart"
-  names(marts)[names(marts) == "displayName"] <- "version"
-  names(marts)[names(marts) == "serverVirtualSchema"] <- "vschema"
 
   if (includeHosts) {
     return(as.list(marts))
@@ -458,46 +478,69 @@ useMart <- function(
 #' searchDatasets(mart = ensembl, pattern = "(R|r)at")
 #'
 #' @export
-listDatasets <- function(mart, verbose = FALSE) {
-  .listDatasets(mart = mart, verbose = verbose, sort = TRUE)
+listDatasets <- function(mart, verbose = FALSE, useCache = TRUE) {
+  .listDatasets(
+    mart = mart,
+    verbose = verbose,
+    sort = TRUE,
+    useCache = useCache
+  )
 }
 
 #' @importFrom methods is
-.listDatasets <- function(mart, verbose = FALSE, sort = FALSE) {
+.listDatasets <- function(
+  mart,
+  verbose = FALSE,
+  sort = FALSE,
+  useCache = TRUE
+) {
   if (missing(mart) || !is(mart, "Mart")) {
     stop("No Mart object given or object not of class 'Mart'")
   }
 
-  bmResult <- bmRequest(
-    request = martHost(mart),
-    http_config = martHTTPConfig(mart),
-    verbose = verbose,
-    type = "datasets",
-    mart = martBM(mart)
-  )
-  txt <- scan(
-    text = bmResult,
-    sep = "\t",
-    blank.lines.skip = TRUE,
-    what = "character",
-    quiet = TRUE,
-    quote = "\""
-  )
+  cache_entry <- paste0("datasets-", martBM(mart), "-", martHost(mart))
+  cache <- .biomartCacheLocation()
+  bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
 
-  ## select visible ("1") table sets
-  i <- intersect(which(txt == "TableSet"), which(txt == "1") - 3L)
+  if (useCache && .useCache(bfc, cacheEntry = cache_entry, numDays = 7L)) {
+    res <- .readFromCache(bfc, cache_entry)
+  } else {
+    bmResult <- bmRequest(
+      request = martHost(mart),
+      http_config = martHTTPConfig(mart),
+      verbose = verbose,
+      type = "datasets",
+      mart = martBM(mart)
+    )
+    txt <- scan(
+      text = bmResult,
+      sep = "\t",
+      blank.lines.skip = TRUE,
+      what = "character",
+      quiet = TRUE,
+      quote = "\""
+    )
 
-  res <- data.frame(
-    dataset = I(txt[i + 1L]),
-    description = I(txt[i + 2L]),
-    version = I(txt[i + 4L])
-  )
+    ## select visible ("1") table sets
+    i <- intersect(which(txt == "TableSet"), which(txt == "1") - 3L)
+
+    res <- data.frame(
+      dataset = I(txt[i + 1L]),
+      description = I(txt[i + 2L]),
+      version = I(txt[i + 4L])
+    )
+    rownames(res) <- NULL
+
+    if (useCache) {
+      .addToCache(bfc, res, hash = cache_entry, update = TRUE)
+    }
+  }
 
   ## sort alphabetically
   if (sort) {
     res <- res[order(res$dataset), ]
+    rownames(res) <- NULL
   }
-  rownames(res) <- NULL
 
   return(res)
 }
@@ -549,7 +592,23 @@ bmVersion <- function(mart, verbose = FALSE) {
 
 
 #' @importFrom utils read.table
-.getAttrFilt <- function(mart, verbose, type) {
+.getAttrFilt <- function(mart, verbose, type, useCache = TRUE) {
+  cache_entry <- paste0(
+    type,
+    "-",
+    martBM(mart),
+    "-",
+    martDataset(mart),
+    "-",
+    martHost(mart)
+  )
+  cache <- .biomartCacheLocation()
+  bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
+
+  if (useCache && .useCache(bfc, cacheEntry = cache_entry, numDays = 7L)) {
+    return(.readFromCache(bfc, cache_entry))
+  }
+
   attrfilt <- bmRequest(
     request = martHost(mart),
     http_config = martHTTPConfig(mart),
@@ -567,14 +626,20 @@ bmVersion <- function(mart, verbose = FALSE) {
     comment.char = "",
     as.is = TRUE
   )
+
+  if (useCache) {
+    .addToCache(bfc, attrfiltParsed, hash = cache_entry, update = TRUE)
+  }
+
   return(attrfiltParsed)
 }
 
-.getAttributes <- function(mart, verbose = FALSE) {
+.getAttributes <- function(mart, verbose = FALSE, useCache = TRUE) {
   attributes_table <- .getAttrFilt(
     mart = mart,
     verbose = verbose,
-    type = "attributes"
+    type = "attributes",
+    useCache = useCache
   )
 
   if (ncol(attributes_table) < 4) {
@@ -592,11 +657,12 @@ bmVersion <- function(mart, verbose = FALSE) {
   return(attributes_table)
 }
 
-.getFilters <- function(mart, verbose = FALSE) {
+.getFilters <- function(mart, verbose = FALSE, useCache = TRUE) {
   filters_table <- .getAttrFilt(
     mart = mart,
     verbose = verbose,
-    type = "filters"
+    type = "filters",
+    useCache = useCache
   )
 
   if (ncol(filters_table) < 7) {
@@ -620,8 +686,8 @@ bmVersion <- function(mart, verbose = FALSE) {
 ## Utility function to check dataset specification
 ## Returns dataset name as a character assuming all checks
 ## have been passed.
-checkDataset <- function(dataset, mart) {
-  validDatasets <- .listDatasets(mart, sort = FALSE)
+checkDataset <- function(dataset, mart, useCache = TRUE) {
+  validDatasets <- .listDatasets(mart, sort = FALSE, useCache = useCache)
   ## subsetting data.frames can produce some weird classes
   ## which aren't character(), so we coerce it here
   dataset <- as.character(dataset)
@@ -661,7 +727,7 @@ checkDataset <- function(dataset, mart) {
 #' mart <- useDataset("hsapiens_gene_ensembl", mart = mart)
 #'
 #' @export
-useDataset <- function(dataset, mart, verbose = FALSE) {
+useDataset <- function(dataset, mart, verbose = FALSE, useCache = TRUE) {
   if (missing(mart) || !inherits(mart, "Mart")) {
     stop(
       "No valid Mart object given, specify a Mart object with the attribute mart"
@@ -674,18 +740,22 @@ useDataset <- function(dataset, mart, verbose = FALSE) {
     )
   }
 
-  dataset <- checkDataset(dataset = dataset, mart = mart)
+  dataset <- checkDataset(dataset = dataset, mart = mart, useCache = useCache)
   martDataset(mart) <- dataset
 
   if (verbose) {
     message("Checking attributes ...", appendLF = FALSE)
   }
-  martAttributes(mart) <- .getAttributes(mart, verbose = verbose)
+  martAttributes(mart) <- .getAttributes(
+    mart,
+    verbose = verbose,
+    useCache = useCache
+  )
   if (verbose) {
     message(" ok")
     message("Checking filters ...", appendLF = FALSE)
   }
-  martFilters(mart) <- .getFilters(mart, verbose = verbose)
+  martFilters(mart) <- .getFilters(mart, verbose = verbose, useCache = useCache)
   if (verbose) {
     message(" ok")
   }

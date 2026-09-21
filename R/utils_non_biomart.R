@@ -116,7 +116,15 @@ findGenomeName <- function(input) {
 }
 
 ## use the Ensembl Rest API to get the current Ensembl version
-getCurrentEnsemblRelease <- function() {
+getCurrentEnsemblRelease <- function(useCache = TRUE) {
+  cache_entry <- "ensembl-current-release"
+  cache <- .biomartCacheLocation()
+  bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
+
+  if (useCache && .useCache(bfc, cacheEntry = cache_entry, numDays = 1L)) {
+    return(.readFromCache(bfc, cache_entry))
+  }
+
   req <- httr2::request("https://rest.ensembl.org/info/data/") |>
     httr2::req_user_agent(
       .biomaRt_user_agent()
@@ -128,6 +136,10 @@ getCurrentEnsemblRelease <- function() {
     httr2::resp_body_json() |>
     unlist() |>
     as.integer()
+
+  if (useCache) {
+    .addToCache(bfc, version, hash = cache_entry, update = TRUE)
+  }
 
   return(version)
 }
