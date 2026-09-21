@@ -2,6 +2,20 @@
 ## Functions for caching
 ###########################################################
 
+#' Hash an arbitrary set of strings into a cache key
+#'
+#' Underlies [.createHash()] and is also used directly to build cache keys
+#' for other cached requests (e.g. mart registries, dataset lists,
+#' attributes/filters) so that all cache entries are named consistently.
+#'
+#' @param ... character values to combine and hash. `NULL` values are
+#'   dropped.
+#' @noRd
+.hashStrings <- function(...) {
+  combined <- paste(..., sep = "_")
+  paste0("biomaRt_", tools::md5sum(bytes = charToRaw(combined)))
+}
+
 .createHash <- function(
   mart,
   attributes,
@@ -31,20 +45,16 @@
   }
   values <- paste(values, collapse = "")
 
-  combined <- paste(
-    c(
-      host,
-      mart@biomart,
-      mart@dataset,
-      attributes,
-      filters,
-      values,
-      uniqueRows,
-      bmHeader
-    ),
-    collapse = "_"
+  .hashStrings(
+    host,
+    mart@biomart,
+    mart@dataset,
+    attributes,
+    filters,
+    values,
+    uniqueRows,
+    bmHeader
   )
-  paste0("biomaRt_", tools::md5sum(bytes = charToRaw(combined)))
 }
 
 #' @param bfc Object of class BiocFileCache, created by a call to

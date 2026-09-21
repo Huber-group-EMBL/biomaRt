@@ -193,10 +193,9 @@ listMarts <- function(
 
   is_ensembl <- grepl(x = request, pattern = "ensembl.org", fixed = TRUE)
 
-  cache_entry <- paste0(
-    "registry-",
+  cache_entry <- .hashStrings(
+    "registry",
     request,
-    "-",
     if (ensemblRedirect && is_ensembl) "yes" else "no"
   )
   cache <- .biomartCacheLocation()
@@ -502,7 +501,7 @@ listDatasets <- function(mart, verbose = FALSE, useCache = TRUE) {
     stop("No Mart object given or object not of class 'Mart'")
   }
 
-  cache_entry <- paste0("datasets-", martBM(mart), "-", martHost(mart))
+  cache_entry <- .hashStrings("datasets", martBM(mart), martHost(mart))
   cache <- .biomartCacheLocation()
   bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
 
@@ -597,13 +596,10 @@ bmVersion <- function(mart, verbose = FALSE) {
 
 #' @importFrom utils read.table
 .getAttrFilt <- function(mart, verbose, type, useCache = TRUE) {
-  cache_entry <- paste0(
+  cache_entry <- .hashStrings(
     type,
-    "-",
     martBM(mart),
-    "-",
     martDataset(mart),
-    "-",
     martHost(mart)
   )
   cache <- .biomartCacheLocation()
