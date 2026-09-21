@@ -164,7 +164,7 @@ listMarts <- function(
   includeHosts = FALSE,
   verbose = FALSE,
   http_config,
-  ensemblRedirect = NULL,
+  ensemblRedirect,
   useCache = TRUE
 ) {
   request <- NULL
@@ -197,7 +197,7 @@ listMarts <- function(
     "registry-",
     request,
     "-",
-    if (!isFALSE(ensemblRedirect) && is_ensembl) "yes" else "no"
+    if (ensemblRedirect && is_ensembl) "yes" else "no"
   )
   cache <- .biomartCacheLocation()
   bfc <- BiocFileCache::BiocFileCache(cache, ask = FALSE)
@@ -339,7 +339,7 @@ useMart <- function(
   host = "https://jun2026.archive.ensembl.org",
   path = "/biomart/martservice",
   port = 443,
-  ensemblRedirect = NULL,
+  ensemblRedirect,
   version,
   http_config,
   verbose = FALSE
