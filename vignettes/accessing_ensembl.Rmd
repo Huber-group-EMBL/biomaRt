@@ -107,7 +107,7 @@ It is possible to query archived versions of Ensembl through `r BiocStyle::Biocp
 `r BiocStyle::Biocpkg("biomaRt")` provides the function `listEnsemblArchives()` to view the available Ensembl archives.  This function takes no arguments, and produces a table containing the name and version number of the available archives, the date they were first released, and the URL where they can be accessed.
 
 ```{r archiveMarts, echo = TRUE, eval = TRUE}
-listEnsemblArchives()
+listEnsemblArchives(fetch = FALSE)
 ```
 
 Alternatively, one can use the <https://www.ensembl.org> website to find an archived version.  From the main page scroll down the bottom of the page, click on 'view in Archive' and select the archive you need.
