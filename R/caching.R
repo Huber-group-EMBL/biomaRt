@@ -27,7 +27,8 @@
   ## if we are using the current version Ensembl URL
   ## swap for the archive version so we can check when it is outdated
   host <- martHost(mart)
-  if (grepl("(www|useast|asia)\\.ensembl\\.org", host)) {
+  has_version <- nzchar(mart@version)
+  if (grepl("(www|useast|asia)\\.ensembl\\.org", host) && !has_version) {
     archives <- .listEnsemblArchives(http_config = martHTTPConfig(mart))
     host <- archives[which(archives$current_release == "*"), "url"]
   }
