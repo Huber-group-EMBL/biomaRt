@@ -268,8 +268,13 @@ listEnsembl <- function(
   }
 
   if (!is.null(version)) {
-    archives <- listEnsemblArchives()
+    # If possible, we avoid hitting the upstream server
+    archives <- listEnsemblArchives(fetch = FALSE)
     idx <- match(version, archives[, "version"], nomatch = NA)
+    if (is.na(idx)) {
+      archives <- listEnsemblArchives(fetch = TRUE)
+      idx <- match(version, archives[, "version"], nomatch = NA)
+    }
     if (is.na(idx)) {
       stop(
         "Specified Ensembl version is not available.\n",
