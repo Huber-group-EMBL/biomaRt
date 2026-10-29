@@ -40,7 +40,7 @@ ensembl_versions <- data.frame(
     "54"
   ),
   date = c(
-    "June 2026",
+    "Jun 2026",
     "Sep 2025",
     "May 2025",
     "Oct 2024",
