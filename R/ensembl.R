@@ -31,7 +31,7 @@
     req_user_agent(
       .biomaRt_user_agent()
     ) |>
-    req_timeout(10) |>
+    req_timeout(60) |>
     req_options(!!!http_config) |>
     req_retry(max_tries = 3) |>
     req_error(is_error = \(resp) FALSE)
