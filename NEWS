@@ -1,4 +1,4 @@
-CHANGES IN VERSION 2.68.1
+CHANGES IN VERSION 2.68.3
 -------------------------
 
 BACKPORTS FROM DEVELOPMENT VERSION
@@ -10,7 +10,8 @@ BACKPORTS FROM DEVELOPMENT VERSION
  o Unnecessary call to `listEnsemblArchives()` in `getBM(useCache = FALSE)`
  has been removed.
  o The 'mirror' argument in `listEnsembl()` no longer has any effect.
-
+ o A local Ensembl version <-> URL map is bundled with package to avoid 
+ unnecessarily querying the upstream server.
 
 CHANGES IN VERSION 2.68.0
 -------------------------
